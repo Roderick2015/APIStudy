@@ -1,4 +1,6 @@
-package java.lang;
+package java.util;
+
+import java.lang.UnsupportedOperationException;
 
 public interface Iterator<E> {
 	boolean hasNext();

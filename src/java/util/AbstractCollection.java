@@ -1,7 +1,6 @@
 package java.util;
 
 import java.lang.Integer;
-import java.lang.Iterator;
 import java.lang.Object;
 import java.lang.OutOfMemoryError;
 import java.lang.Override;

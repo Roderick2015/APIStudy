@@ -1,7 +1,5 @@
 package java.util;
 
-import java.lang.Iterable;
-import java.lang.Iterator;
 import java.lang.Object;
 
 public interface Collection<T> extends Iterable<T> {
@@ -32,6 +30,4 @@ public interface Collection<T> extends Iterable<T> {
 	void clear();
 	
 	boolean equals(Object o);
-	
-	
 }
