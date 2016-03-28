@@ -182,12 +182,117 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	@Override
 	public boolean add(E e) {
 		ensureCapacityInternal(size + 1);
-		
-		return false;
+		elementData[size++] = e;
+		return true;
+	}
+	
+	@Override
+	public void add(int index, E element) {
+		rangeCheckForAdd(index);
+		ensureCapacityInternal(size + 1);
+		System.arraycopy(elementData, index, elementData,
+				index + 1, size - index); //需移动(size - index)个元素
+		elementData[index] = element;
+		size++;
 	}
 
+	@Override
+	public E remove(int index) {
+		rangeCheck(index);
+		
+		modCount++;
+		E oldValue = elementData(index);
+		int numMoved = size - index - 1;
+		if (numMoved > 0) //根据移除元素的位置，决定有多少个元素需要向左移动
+			System.arraycopy(elementData, index + 1, 
+					elementData, index, numMoved);
+		elementData[--size] = null; //多出来的位置设为null,让GC回收
+		return oldValue;
+	}
+	
+	@Override
+	public boolean remove(Object o) {
+		if (o == null) {
+			for (int index = 0; index < size; index++)
+				if (elementData[index] == null) {
+					fastRemove(index);
+					return true;
+				}
+		} else {
+			for (int index = 0; index < size; index++)
+				if (o.equals(elementData[index])) {
+					fastRemove(index);
+					return true;
+				}
+		}
+		return false;
+	}
+	
+	private void fastRemove(int index) {
+		modCount++;
+		int numMoved = size - index - 1;
+		if (numMoved > 0)
+			System.arraycopy(elementData, index + 1, elementData,
+					index, numMoved);
+		elementData[--size] = null;
+		
+	}
+	
+	@Override
+	public void clear() {
+		modCount++;
+		
+		for (int i = 0; i < size; i++)
+			elementData[i] = null; //数组置null，GC回收
+		
+		size = 0;
+	}
+	
+	@Override
+	public boolean addAll(Collection<? extends E> c) {
+		Object[] a = c.toArray();
+		int numNew = a.length;
+		ensureCapacityInternal(size + numNew); // ?
+		System.arraycopy(a, 0, elementData, size, numNew); //?
+		size += numNew;
+		return numNew != 0;
+	}
+	
+	@Override
+	public boolean addAll(int index, Collection<? extends E> c) {
+		rangeCheckForAdd(index);
+		
+		Object[] a = c.toArray();
+		int numNew = a.length;
+		ensureCapacityInternal(size + numNew);
+		
+		int numMoved = size - index;
+		if (numMoved > 0)  //index小于size
+			System.arraycopy(elementData, index, elementData,
+					index + numNew, numMoved);
+		
+		//index等于size，那接着往后加就行了
+		System.arraycopy(a, 0, elementData, index, numNew);
+		size += numNew;
+		return numNew != 0;
+	}
+	
+	@Override
+	protected void removeRange(int fromIndex, int toIndex) {
+		modCount++;
+		int numMoved = size - toIndex; //后面元素需要移动的位置
+		System.arraycopy(elementData, toIndex, elementData, fromIndex, numMoved);
+		
+		//把空的位置，手动置为null
+		int newSize = size - (toIndex-fromIndex);
+		for (int i = newSize; i < size; i++) {
+			elementData[i] = null;
+		}
+		size = newSize;
+	}
+	
 	private void rangeCheck(int index) {
-		if (index > size)
+		if (index >= size)
 			throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
 	}
 
@@ -198,6 +303,17 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	
 	private String outOfBoundsMsg(int index) {
 		return "Index: " + index + ", Size: " + size;
+	}
+	
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		Objects.requireNonNull(c);
+		return batchRemove(c, false);
+	}
+
+	private boolean batchRemove(Collection<?> c, boolean complement) {
+		
+		return false;
 	}
 
 }
