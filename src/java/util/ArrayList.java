@@ -1,5 +1,8 @@
 package java.util;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.Override;
 
 public class ArrayList<E> extends AbstractList<E> implements List<E> {
@@ -310,10 +313,79 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 		Objects.requireNonNull(c);
 		return batchRemove(c, false);
 	}
-
-	private boolean batchRemove(Collection<?> c, boolean complement) {
-		
-		return false;
+	
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		Objects.requireNonNull(c);
+		return batchRemove(c, true);
 	}
 
+	/**
+	 * ?
+	 * @param c
+	 * @param complement
+	 * @return
+	 */
+	private boolean batchRemove(Collection<?> c, boolean complement) {
+		final Object[] elementData = this.elementData;
+		int r = 0, w = 0;
+		boolean modified = false;
+		try {
+			for (; r < size; r++)
+				if (c.contains(elementData[r]) == complement) //false 把不包含的元素留下来，true把包含的元素留下来
+					elementData[w++] = elementData[r];
+		} finally {
+			// Preserve behavioral compatibility with AbstractCollection,
+			// even if c.contains() throws.
+			if (r != size) {
+				System.arraycopy(elementData, r, elementData, w, size - r);
+				w += size - r;
+			}
+			if (w != size) {
+				// clear to let GC do its work
+				for (int i = w; i < size; i++)
+					elementData[i] = null;
+				modCount += size - w;
+				size = w;
+				modified = true;
+			}
+		}
+		return modified;
+	}
+
+	/**
+	 * non-static and non-transient fields 
+	 */
+	private void writeObject(ObjectOutputStream s) throws IOException {
+		int expectedModCount = modCount;
+		s.defaultWriteObject();
+		s.writeInt(size);
+		
+		for (int i = 0; i < size; i++) {
+			s.writeObject(elementData[i]);
+		}
+		
+		if (modCount != expectedModCount) {
+			throw new ConcurrentModificationException();
+		}
+	}
+	
+	private void readObject(ObjectInputStream s) 
+		throws ClassNotFoundException, IOException {
+		elementData = EMPTY_ELEMENTDATA;
+		
+		s.defaultReadObject();
+		s.readInt();
+		
+		if (size > 0) {
+			ensureCapacityInternal(size);
+			
+			Object[] a = elementData;
+			for (int i = 0; i < size; i++) {
+				a[i] = s.readObject();
+			}
+		}
+	}
+	
+	
 }
