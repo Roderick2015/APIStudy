@@ -1,8 +1,10 @@
-package java.util;
+package org.source.util;
 
 import java.lang.Object;
+import java.util.Iterator;
 
-public interface Collection<T> extends Iterable<T> {
+
+public interface CollectionMe<T> extends Iterable<T> {
 	int size();
 	
 	boolean isEmpty();
@@ -19,13 +21,13 @@ public interface Collection<T> extends Iterable<T> {
 	
 	boolean remove(Object o);
 	
-	boolean containsAll(Collection<?> c); //?ºÍT
+	boolean containsAll(CollectionMe<?> c); //?ºÍT
 	
-	boolean addAll(Collection<? extends T> c);
+	boolean addAll(CollectionMe<? extends T> c);
 	
-	boolean removeAll(Collection<?> c);
+	boolean removeAll(CollectionMe<?> c);
 	
-	boolean retainAll(Collection<?> c);
+	boolean retainAll(CollectionMe<?> c);
 	
 	void clear();
 	

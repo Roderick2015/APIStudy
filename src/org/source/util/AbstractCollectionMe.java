@@ -1,18 +1,13 @@
-package java.util;
+package org.source.util;
 
-import java.lang.Integer;
-import java.lang.Object;
-import java.lang.OutOfMemoryError;
-import java.lang.Override;
-import java.lang.SuppressWarnings;
-import java.lang.System;
-import java.lang.UnsupportedOperationException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Objects;
 
-public abstract class AbstractCollection<T> implements Collection<T> {
+public abstract class AbstractCollectionMe<T> implements CollectionMe<T> {
 
-	public AbstractCollection() {
+	public AbstractCollectionMe() {
 	}
 
 	@Override
@@ -143,7 +138,7 @@ public abstract class AbstractCollection<T> implements Collection<T> {
 	}
 
 	@Override
-	public boolean containsAll(Collection<?> c) {
+	public boolean containsAll(CollectionMe<?> c) {
 		for (Object e : c)
 			if (!this.contains(e))
 				return false;
@@ -151,7 +146,7 @@ public abstract class AbstractCollection<T> implements Collection<T> {
 	}
 
 	@Override
-	public boolean addAll(Collection<? extends T> c) {
+	public boolean addAll(CollectionMe<? extends T> c) {
 		boolean modified = false;
 		for (T t : c)
 			if (add(t))
@@ -160,7 +155,7 @@ public abstract class AbstractCollection<T> implements Collection<T> {
 	}
 
 	@Override
-	public boolean removeAll(Collection<?> c) {
+	public boolean removeAll(CollectionMe<?> c) {
 		Objects.requireNonNull(c);
 		boolean modified = false;
 		Iterator<T> it = this.iterator();
@@ -175,7 +170,7 @@ public abstract class AbstractCollection<T> implements Collection<T> {
 	}
 
 	@Override
-	public boolean retainAll(Collection<?> c) {
+	public boolean retainAll(CollectionMe<?> c) {
 		Objects.requireNonNull(c);
 		boolean modified = false;
 		Iterator<T> it = this.iterator();
@@ -207,7 +202,7 @@ public abstract class AbstractCollection<T> implements Collection<T> {
 		sb.append('[');
 		for (;;) {
 			T e = it.next();
-			sb.append(e == this ? "(this Collection)" : e);
+			sb.append(e == this ? "(this Collection1)" : e);
 			if (!it.hasNext())
 				return sb.append(']').toString();
 			sb.append(',').append(' ');

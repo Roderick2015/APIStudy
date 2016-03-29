@@ -1,11 +1,14 @@
-package java.util;
+package org.source.util;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.Override;
+import java.util.Arrays;
+import java.util.ConcurrentModificationException;
+import java.util.Objects;
 
-public class ArrayList<E> extends AbstractList<E> implements List<E> {
+public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 	private static final int DEFAULT_CAPACITY = 10;
 	private static final Object[] EMPTY_ELEMENTDATA = {};
 	private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
@@ -13,11 +16,11 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	transient Object[] elementData;
 	private int size;
 	
-	public ArrayList() {
+	public ArrayListMe() {
 		this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
 	}
 	
-	public ArrayList(int initialCapacity) {
+	public ArrayListMe(int initialCapacity) {
 		if (initialCapacity > 0) {
 			this.elementData = new Object[initialCapacity];
 		} else if (initialCapacity == 0) {
@@ -27,7 +30,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 		}
 	}
 	
-	public ArrayList(Collection<? extends E> c) {
+	public ArrayListMe(CollectionMe<? extends E> c) {
 		elementData = c.toArray();
 		if ((size = elementData.length) != 0) {
 			if (elementData.getClass() != Object[].class) //如果toArray返回的数组类型不是Object[]，则按指定类型重新copy一份
@@ -138,7 +141,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	@Override
 	public Object clone() {
 		try {
-			ArrayList<?> v = (ArrayList<?>) super.clone(); //克隆对象
+			ArrayListMe<?> v = (ArrayListMe<?>) super.clone(); //克隆对象
 			v.elementData = Arrays.copyOf(elementData, size); //复制数据
 			v.modCount = 0; //初始化
 			return v;
@@ -252,7 +255,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	}
 	
 	@Override
-	public boolean addAll(Collection<? extends E> c) {
+	public boolean addAll(CollectionMe<? extends E> c) {
 		Object[] a = c.toArray();
 		int numNew = a.length;
 		ensureCapacityInternal(size + numNew); // ?
@@ -262,7 +265,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	}
 	
 	@Override
-	public boolean addAll(int index, Collection<? extends E> c) {
+	public boolean addAll(int index, CollectionMe<? extends E> c) {
 		rangeCheckForAdd(index);
 		
 		Object[] a = c.toArray();
@@ -309,13 +312,13 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	}
 	
 	@Override
-	public boolean removeAll(Collection<?> c) {
+	public boolean removeAll(CollectionMe<?> c) {
 		Objects.requireNonNull(c);
 		return batchRemove(c, false);
 	}
 	
 	@Override
-	public boolean retainAll(Collection<?> c) {
+	public boolean retainAll(CollectionMe<?> c) {
 		Objects.requireNonNull(c);
 		return batchRemove(c, true);
 	}
@@ -326,7 +329,7 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 	 * @param complement
 	 * @return
 	 */
-	private boolean batchRemove(Collection<?> c, boolean complement) {
+	private boolean batchRemove(CollectionMe<?> c, boolean complement) {
 		final Object[] elementData = this.elementData;
 		int r = 0, w = 0;
 		boolean modified = false;
@@ -386,6 +389,5 @@ public class ArrayList<E> extends AbstractList<E> implements List<E> {
 			}
 		}
 	}
-	
-	
+
 }

@@ -1,6 +1,8 @@
-package java.util;
+package org.source.util;
 
-public interface ListIterator<E> extends Iterator<E> {
+import java.util.Iterator;
+
+public interface ListIteratorMe<E> extends Iterator<E> {
 	boolean hasNext();
 
 	E next();

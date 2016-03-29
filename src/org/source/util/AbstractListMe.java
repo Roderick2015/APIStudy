@@ -1,7 +1,11 @@
-package java.util;
+package org.source.util;
 
-public abstract class AbstractList<E> extends AbstractCollection<E> implements List<E> {
-	protected AbstractList() {
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+public abstract class AbstractListMe<E> extends AbstractCollectionMe<E> implements ListMe<E> {
+	protected AbstractListMe() {
 	}
 
 	@Override
@@ -29,7 +33,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
 	@Override
 	public int indexOf(Object o) {
-		ListIterator<E> it = listIterator();
+		ListIteratorMe<E> it = listIterator();
 		if (o == null) {
 			while (it.hasNext()) {
 				if (it.next() == null)
@@ -46,7 +50,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
 	@Override
 	public int lastIndexOf(Object o) {
-		ListIterator<E> it = listIterator();
+		ListIteratorMe<E> it = listIterator();
 		if (o == null) {
 			while (it.hasPrevious())
 				if (it.previous() == null)
@@ -65,7 +69,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 	}
 
 	@Override
-	public boolean addAll(int index, Collection<? extends E> c) {
+	public boolean addAll(int index, CollectionMe<? extends E> c) {
 		rangeCheckForAdd(index);
 		boolean modified = false;
 		for (E e : c) {
@@ -84,12 +88,12 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 	}
 
 	@Override
-	public ListIterator<E> listIterator() {
+	public ListIteratorMe<E> listIterator() {
 		return listIterator(0);
 	}
 
 	@Override
-	public ListIterator<E> listIterator(int index) {
+	public ListIteratorMe<E> listIterator(int index) {
 		rangeCheckForAdd(index);
 		return new ListItr(index);
 	}
@@ -98,20 +102,21 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 	 * 检测该list是否实现了RandomAccess接口，而采用不同的遍历算法
 	 */
 	@Override
-	public List<E> subList(int fromIndex, int toIndex) {
-		return (this instanceof RandomAccess ? new RandomAccessSubList<>(this, fromIndex, toIndex)
-				: new SubList<>(this, fromIndex, toIndex));
+	public ListMe<E> subList(int fromIndex, int toIndex) {
+		/*return (this instanceof RandomAccess ? new RandomAccessSubList<>(this, fromIndex, toIndex)
+				: new SubList<>(this, fromIndex, toIndex));*/
+		return null;
 	}
 
 	@Override
 	public boolean equals(Object o) {
 		if (o == this)
 			return true;
-		if (!(o instanceof List))
+		if (!(o instanceof ListMe))
 			return false;
 
-		ListIterator<E> e1 = listIterator();
-		ListIterator<?> e2 = ((List<?>) o).listIterator();
+		ListIteratorMe<E> e1 = listIterator();
+		ListIteratorMe<?> e2 = ((ListMe<?>) o).listIterator();
 		while (e1.hasNext() && e2.hasNext()) {
 			E o1 = e1.next();
 			Object o2 = e2.next();
@@ -149,7 +154,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 	}
 
 	protected void removeRange(int fromIndex, int toIndex) {
-		ListIterator<E> it = listIterator(fromIndex);
+		ListIteratorMe<E> it = listIterator(fromIndex);
 		for (int i = 0, n = toIndex - fromIndex; i < n; i++) {
 			it.next();
 			it.remove(); // 删除迭代器上一个next或previous方法返回的元素
@@ -188,7 +193,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 			checkForComodification();
 
 			try {
-				AbstractList.this.remove(lastRet);
+				AbstractListMe.this.remove(lastRet);
 				if (lastRet < cursor)
 					cursor--;
 				lastRet = -1; // 防止没有next就直接调用remove，或重复调用remove
@@ -204,7 +209,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 		}
 	}
 
-	private class ListItr extends Itr implements ListIterator<E> {
+	private class ListItr extends Itr implements ListIteratorMe<E> {
 		ListItr(int index) {
 			super.cursor = index;
 		}
@@ -245,7 +250,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 			checkForComodification();
 
 			try {
-				AbstractList.this.set(lastRet, e); // 替换上一个元素
+				AbstractListMe.this.set(lastRet, e); // 替换上一个元素
 				expectedModCount = modCount;
 			} catch (IndexOutOfBoundsException ex) {
 				throw new ConcurrentModificationException();
@@ -258,7 +263,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
 			try {
 				int i = cursor;
-				AbstractList.this.add(i, e);
+				AbstractListMe.this.add(i, e);
 				lastRet = -1;
 				cursor = i + 1; // 专门拿个i变量来赋值？
 				expectedModCount = modCount;
@@ -269,12 +274,12 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 	}
 
 	@SuppressWarnings("hiding")
-	class SubList<E> extends AbstractList<E> {
-		private final AbstractList<E> l;
+	class SubList<E> extends AbstractListMe<E> {
+		private final AbstractListMe<E> l;
 		private final int offset;
 		private int size;
 
-		SubList(AbstractList<E> list, int fromIndex, int toIndex) {
+		SubList(AbstractListMe<E> list, int fromIndex, int toIndex) {
 			if (fromIndex < 0)
 				throw new IndexOutOfBoundsException("fromIndex= " + fromIndex);
 			if (toIndex > list.size())
@@ -337,12 +342,12 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 		}
 
 		@Override
-		public boolean addAll(Collection<? extends E> c) {
+		public boolean addAll(CollectionMe<? extends E> c) {
 			return addAll(size, c);
 		}
 
 		@Override
-		public boolean addAll(int index, Collection<? extends E> c) {
+		public boolean addAll(int index, CollectionMe<? extends E> c) {
 			rangeCheckForAdd(index);
 			int i = c.size();
 			if (i == 0) // ?
@@ -360,11 +365,11 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 		}
 
 		@Override
-		public ListIterator<E> listIterator(final int index) { // final?
+		public ListIteratorMe<E> listIterator(final int index) { // final?
 			checkForComodification();
 			rangeCheckForAdd(index); // ?
-			return new ListIterator<E>() {
-				private final ListIterator<E> i = l.listIterator(index + offset);
+			return new ListIteratorMe<E>() {
+				private final ListIteratorMe<E> i = l.listIterator(index + offset);
 
 				@Override
 				public boolean hasNext() {
@@ -422,7 +427,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 			};
 		}
 
-		public List<E> subList(int fromIndex, int toIndex) {
+		public ListMe<E> subList(int fromIndex, int toIndex) {
 			return new SubList<>(this, fromIndex, toIndex);
 		}
 
@@ -449,15 +454,15 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 	}
 }
 
-class RandomAccessSubList<E> extends SubList<E> implements RandomAccess {
-	RandomAccessSubList(AbstractList<E> list, int fromIndex, int toIndex) {
+/*class RandomAccessSubList<E> extends SubList<E> implements RandomAccess {
+	RandomAccessSubList(AbstractListMe<E> list, int fromIndex, int toIndex) {
 		super(list, fromIndex, toIndex);
 	}
 
-	public List<E> subList(int fromIndex, int toIndex) {
+	public ListMe<E> subList(int fromIndex, int toIndex) {
 		return new RandomAccessSubList<>(this, fromIndex, toIndex);
 	}
-}
+}*/
 
 //未覆写的
 /*@Override
