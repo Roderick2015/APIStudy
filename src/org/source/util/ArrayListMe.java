@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
 
-public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
+public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E>, Cloneable {
 	private static final int DEFAULT_CAPACITY = 10;
 	private static final Object[] EMPTY_ELEMENTDATA = {};
 	private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
@@ -33,13 +33,16 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 	public ArrayListMe(CollectionMe<? extends E> c) {
 		elementData = c.toArray();
 		if ((size = elementData.length) != 0) {
-			if (elementData.getClass() != Object[].class) //如果toArray返回的数组类型不是Object[]，则按指定类型重新copy一份
+			if (elementData.getClass() != Object[].class) //如果toArray返回的数组类型不是Object[]，则按指定类型重新copy一份，为什么？
 				elementData = Arrays.copyOf(elementData, size, Object[].class);
 		} else {
 			this.elementData = EMPTY_ELEMENTDATA;
 		}
 	}
 	
+	/**
+	 * 去除多余空间
+	 */
 	public void trimToSize() {
 		modCount++; //?
 		if (size < elementData.length) { //如果实际的size小于数组当前的长度，则copy一份减少存储空间，如果里面没有值则置空
@@ -49,19 +52,25 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 		}
 	}
 	
+	/**
+	 * 公共方法，list接口中未声明该方法，如果是直接创建的ArrayList对象，可通过该方法手动扩展数组的长度，但是这样并不安全
+	 */
 	public void ensureCapacity(int minCapacity) {
 		//最小扩展数，如果当前数据不为空，则大于0就好，数据为空，则扩展数必须大于默认的空间（10）
 		int minExpand = (elementData != DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
 				? 0
 				: DEFAULT_CAPACITY;
 		
-		if (minCapacity > minExpand) //最小空间大于最小扩展数
-			ensureExplicitCapacity(minCapacity); //?如果最小空间小于当前的，就不会扩充，为什么分两步检验？
+		if (minCapacity > minExpand)
+			ensureExplicitCapacity(minCapacity);
 	}
 	
+	/**
+	 * @param minCapacity 所需的最小空间（内部方法）
+	 */
 	private void ensureCapacityInternal(int minCapacity) {
 		if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
-			minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity); //?
+			minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity); //所需的最小空间和默认的最小空间，取最大值
 		
 		ensureExplicitCapacity(minCapacity);
 	}
@@ -69,7 +78,7 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 	private void ensureExplicitCapacity(int minCapacity) {
 		modCount++;
 		
-		if (minCapacity - elementData.length > 0)
+		if (minCapacity - elementData.length > 0) //所需的最小空间数大于当前的size，扩展数组大小
 			grow(minCapacity);
 	}
 
@@ -77,10 +86,10 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 	
 	private void grow(int minCapacity) {
 		int oldCapacity = elementData.length;
-		int newCapacity = oldCapacity + (oldCapacity >> 1);
+		int newCapacity = oldCapacity + (oldCapacity >> 1); //扩展1.5倍
 		if (newCapacity - minCapacity < 0) //比自动扩展的要大
 			newCapacity = minCapacity;
-		if (newCapacity - MAX_ARRAY_SIZE > 0) //比允许的最大空间数大
+		if (newCapacity - MAX_ARRAY_SIZE > 0) //如果比允许的最大空间数大，进行截取
 			newCapacity = hugeCapacity(minCapacity);
 		elementData = Arrays.copyOf(elementData, newCapacity);
 	}
@@ -142,7 +151,7 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 	public Object clone() {
 		try {
 			ArrayListMe<?> v = (ArrayListMe<?>) super.clone(); //克隆对象
-			v.elementData = Arrays.copyOf(elementData, size); //复制数据
+			v.elementData = Arrays.copyOf(elementData, size); //去除多余的空间，节省开支
 			v.modCount = 0; //初始化
 			return v;
 		} catch (CloneNotSupportedException e) {
@@ -160,7 +169,7 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 		if (a.length < size) //长度小于当前list，以a的类型把当前list的内容复一份并返回
 			return (T[]) Arrays.copyOf(elementData, size, a.getClass());
 		System.arraycopy(elementData, 0, a, 0, size); //把内容复制到a
-		if (a.length > size) //a中比当前list中多出的那部分，置null
+		if (a.length > size) //如果a的空间比按原数组大，最后一位置为null，来确定列表的长度
 			a[size] = null;
 		return a;
 	}
@@ -185,19 +194,27 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 		return oldValue;
 	}
 	
+	/** 
+	 * 事实证明可以加null元素，关键是size要++
+	 */
 	@Override
 	public boolean add(E e) {
-		ensureCapacityInternal(size + 1);
+		ensureCapacityInternal(size + 1); //所需空间 = 当前size + 1
 		elementData[size++] = e;
 		return true;
 	}
 	
+	/**
+	 * @param index 索引位置只能<=size，即前面或在末尾位置插入元素
+	 * 如数组a[1,2]，size=2，那只能在a[0-2]的位置上赋值，a[2]相当于add方法
+	 * index=1相当于把原a[1]，a[2]的元素往后挪一位，然后在a[1]位置插入新的元素
+	 */
 	@Override
 	public void add(int index, E element) {
 		rangeCheckForAdd(index);
 		ensureCapacityInternal(size + 1);
 		System.arraycopy(elementData, index, elementData,
-				index + 1, size - index); //需移动(size - index)个元素
+				index + 1, size - index); //把index位置后面的元素统一右移一位
 		elementData[index] = element;
 		size++;
 	}
@@ -209,10 +226,10 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 		modCount++;
 		E oldValue = elementData(index);
 		int numMoved = size - index - 1;
-		if (numMoved > 0) //根据移除元素的位置，决定有多少个元素需要向左移动
+		if (numMoved > 0) //根据移除元素的位置，决定有多少个元素需要复制向左移动，把原位置的元素覆盖掉
 			System.arraycopy(elementData, index + 1, 
 					elementData, index, numMoved);
-		elementData[--size] = null; //多出来的位置设为null,让GC回收
+		elementData[--size] = null; //多出来的位置设为null,让GC回收，不置的话会出现重复元素，因为copy只是复制覆盖，没被覆盖掉的元素还在那
 		return oldValue;
 	}
 	
@@ -258,8 +275,8 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 	public boolean addAll(CollectionMe<? extends E> c) {
 		Object[] a = c.toArray();
 		int numNew = a.length;
-		ensureCapacityInternal(size + numNew); // ?
-		System.arraycopy(a, 0, elementData, size, numNew); //?
+		ensureCapacityInternal(size + numNew);
+		System.arraycopy(a, 0, elementData, size, numNew);
 		size += numNew;
 		return numNew != 0;
 	}
@@ -273,7 +290,7 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E> {
 		ensureCapacityInternal(size + numNew);
 		
 		int numMoved = size - index;
-		if (numMoved > 0)  //index小于size
+		if (numMoved > 0)  //插在元素中间，后面的元素需要挪
 			System.arraycopy(elementData, index, elementData,
 					index + numNew, numMoved);
 		
