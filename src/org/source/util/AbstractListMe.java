@@ -279,6 +279,9 @@ public abstract class AbstractListMe<E> extends AbstractCollectionMe<E> implemen
 		private final int offset;
 		private int size;
 
+		/**
+		 * fromIndex（包括）和 toIndex（不包括）
+		 */
 		SubList(AbstractListMe<E> list, int fromIndex, int toIndex) {
 			if (fromIndex < 0)
 				throw new IndexOutOfBoundsException("fromIndex= " + fromIndex);
@@ -333,6 +336,9 @@ public abstract class AbstractListMe<E> extends AbstractCollectionMe<E> implemen
 			return (E) loaclObecjt;
 		}
 
+		/**
+		 * fromIndex（包括）和 toIndex（不包括）
+		 */
 		@Override
 		protected void removeRange(int fromIndex, int toIndex) {
 			checkForComodification();

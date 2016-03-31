@@ -32,4 +32,8 @@ public interface CollectionMe<T> extends Iterable<T> {
 	void clear();
 	
 	boolean equals(Object o);
+	
+	/***************************/
+	int hashCode();
+	
 }
