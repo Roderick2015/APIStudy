@@ -615,6 +615,8 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E>, Clon
      * 如不想请创建新对象<br>
      * 3.如果对原ArrayList做了修改，再次操作sublist时，会导致modCount不一致而抛出异常，
      * 因为ArrayList不会主动对subList的modCount进行校正
+     * 4.由于sublist会保留ArrayList的引用，因此只要sublist不释放，ArrayList就不会释放，
+     * 如果原ArrayList较大，容易引起隐性的内存泄漏，类似的还有String类的subString方法
      */
     private class SubListMe extends AbstractListMe<E> implements RandomAccess {
         private final AbstractListMe<E> parent;
@@ -624,7 +626,7 @@ public class ArrayListMe<E> extends AbstractListMe<E> implements ListMe<E>, Clon
 
         SubListMe(AbstractListMe<E> parent,
                 int offset, int fromIndex, int toIndex) {
-            this.parent = parent;
+            this.parent = parent; //当前ArrayList的引用
             this.parentOffset = fromIndex;
             this.offset = offset + fromIndex;
             this.size = toIndex - fromIndex;

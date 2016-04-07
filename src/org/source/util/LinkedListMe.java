@@ -10,6 +10,18 @@ import java.util.function.Consumer;
 
 /**
  * 双向链表
+ * 1.存储速度快，但是查找就是遍历了，效率低<p>
+ * 2.offerFirst和addFirst以及类似方法的区别，官网的解释是<p>
+ * 1)当容量达到限制时，addFirst会直接抛出运行时异常，该方法无返回值<p>
+ * 2)offerFirst会告诉你是否成功了，并且在容量上限时，返给你false而不是Exception，
+ * 但是在链表结构达到上限除非是到了JVM的极限，所以可以当做是无容量上限的<p>
+ * 3)官方建议无容量限制用add，有限制用offer，我当时还纠结了很久到底用哪个，其实一般情况下
+ * 哪个都一样了，看你要不要获取返回值要不要捕捉异常，根据实际情况来。
+ * 4)当然也有真正相同的方法如peekFirst和peek
+ * 5)像add、remove方法是list接口的实现，而offer、poll方法是Deque接口的实现，
+ * 也就是说你可以把他当做List，也可以当做Deque，从而使用不同的接口方法来实现你的需求，
+ * 虽然他们非常相似，比如add(E e)和offerLast(E e)
+ * 6)它能倒序迭代
  */
 public class LinkedListMe<E> extends AbstractSequentialListMe<E> implements ListMe<E>,
 	DequeMe<E>, Cloneable, Serializable {
@@ -446,7 +458,7 @@ public class LinkedListMe<E> extends AbstractSequentialListMe<E> implements List
 	}
 	
 	/**
-	 * 在链首添加该元素（与addFirst方法的区别?）
+	 * 在链首添加该元素
 	 */
 	@Override
 	public boolean offerFirst(E e) {

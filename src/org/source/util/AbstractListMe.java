@@ -3,6 +3,7 @@ package org.source.util;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.RandomAccess;
 
 public abstract class AbstractListMe<E> extends AbstractCollectionMe<E> implements ListMe<E> {
 	protected AbstractListMe() {
@@ -103,9 +104,8 @@ public abstract class AbstractListMe<E> extends AbstractCollectionMe<E> implemen
 	 */
 	@Override
 	public ListMe<E> subList(int fromIndex, int toIndex) {
-		/*return (this instanceof RandomAccess ? new RandomAccessSubList<>(this, fromIndex, toIndex)
-				: new SubList<>(this, fromIndex, toIndex));*/
-		return null;
+		return (this instanceof RandomAccess ? new RandomAccessSubListMe<>(this, fromIndex, toIndex)
+				: new SubListMe<>(this, fromIndex, toIndex));
 	}
 
 	@Override
@@ -272,203 +272,205 @@ public abstract class AbstractListMe<E> extends AbstractCollectionMe<E> implemen
 			}
 		}
 	}
+}
 
-	@SuppressWarnings("hiding")
-	class SubList<E> extends AbstractListMe<E> {
-		private final AbstractListMe<E> l;
-		private final int offset;
-		private int size;
+/**
+ * 不是内部类？
+ */
+class SubListMe<E> extends AbstractListMe<E> {
+	private final AbstractListMe<E> l;
+	private final int offset;
+	private int size;
 
-		/**
-		 * fromIndex（包括）和 toIndex（不包括）
-		 */
-		SubList(AbstractListMe<E> list, int fromIndex, int toIndex) {
-			if (fromIndex < 0)
-				throw new IndexOutOfBoundsException("fromIndex= " + fromIndex);
-			if (toIndex > list.size())
-				throw new IndexOutOfBoundsException("toIndex= " + toIndex);
-			if (fromIndex > toIndex)
-				throw new IndexOutOfBoundsException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+	/**
+	 * fromIndex（包括）和 toIndex（不包括）
+	 */
+	SubListMe(AbstractListMe<E> list, int fromIndex, int toIndex) {
+		if (fromIndex < 0)
+			throw new IndexOutOfBoundsException("fromIndex= " + fromIndex);
+		if (toIndex > list.size())
+			throw new IndexOutOfBoundsException("toIndex= " + toIndex);
+		if (fromIndex > toIndex)
+			throw new IndexOutOfBoundsException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
 
-			this.l = list;
-			this.offset = fromIndex;
-			this.size = toIndex - fromIndex;
-			this.modCount = l.modCount; // ?
-		}
+		this.l = list;
+		this.offset = fromIndex;
+		this.size = toIndex - fromIndex;
+		this.modCount = l.modCount;
+	}
 
-		@Override
-		public E set(int index, E element) {
-			rangeCheck(index);
-			checkForComodification();
-			return (E) l.set(index + offset, element); // 转换
-		}
+	@Override
+	public E set(int index, E element) {
+		rangeCheck(index);
+		checkForComodification();
+		return (E) l.set(index + offset, element); // 转换
+	}
 
-		@Override
-		public E get(int index) {
-			rangeCheck(index);
-			checkForComodification();
-			return (E) l.get(index + offset);
-		}
+	@Override
+	public E get(int index) {
+		rangeCheck(index);
+		checkForComodification();
+		return (E) l.get(index + offset);
+	}
 
-		@Override
-		public int size() {
-			checkForComodification();
-			return size;
-		}
+	@Override
+	public int size() {
+		checkForComodification();
+		return size;
+	}
 
-		@Override
-		public void add(int index, E element) {
-			rangeCheck(index);
-			checkForComodification();
-			l.add(index + offset, element);
-			modCount = l.modCount; // l增加元素后，modCount会+1，sublist中的该变量应及时更新
-			size += 1;
-		}
+	@Override
+	public void add(int index, E element) {
+		rangeCheck(index);
+		checkForComodification();
+		l.add(index + offset, element);
+		modCount = l.modCount; // l增加元素后，modCount会+1，sublist中的该变量应及时更新
+		size += 1;
+	}
 
-		@SuppressWarnings("unchecked")
-		@Override
-		public E remove(int index) {
-			rangeCheck(index);
-			checkForComodification();
-			Object loaclObecjt = l.remove(index + offset);
-			modCount = l.modCount;
-			size -= 1;
-			return (E) loaclObecjt;
-		}
+	@SuppressWarnings("unchecked")
+	@Override
+	public E remove(int index) {
+		rangeCheck(index);
+		checkForComodification();
+		Object loaclObecjt = l.remove(index + offset);
+		modCount = l.modCount;
+		size -= 1;
+		return (E) loaclObecjt;
+	}
 
-		/**
-		 * fromIndex（包括）和 toIndex（不包括）
-		 */
-		@Override
-		protected void removeRange(int fromIndex, int toIndex) {
-			checkForComodification();
-			l.removeRange(fromIndex, toIndex);
-			modCount = l.modCount;
-			size -= toIndex - fromIndex;
-		}
+	/**
+	 * fromIndex（包括）和 toIndex（不包括）
+	 */
+	@Override
+	protected void removeRange(int fromIndex, int toIndex) {
+		checkForComodification();
+		l.removeRange(fromIndex, toIndex);
+		modCount = l.modCount;
+		size -= toIndex - fromIndex;
+	}
 
-		@Override
-		public boolean addAll(CollectionMe<? extends E> c) {
-			return addAll(size, c);
-		}
+	@Override
+	public boolean addAll(CollectionMe<? extends E> c) {
+		return addAll(size, c);
+	}
 
-		@Override
-		public boolean addAll(int index, CollectionMe<? extends E> c) {
-			rangeCheckForAdd(index);
-			int i = c.size();
-			if (i == 0) // ?
-				return false;
-			checkForComodification();
-			l.addAll(index + offset, c);
-			modCount = l.modCount;
-			size += i;
-			return true;
-		}
+	@Override
+	public boolean addAll(int index, CollectionMe<? extends E> c) {
+		rangeCheckForAdd(index);
+		int i = c.size();
+		if (i == 0) // ?
+			return false;
+		checkForComodification();
+		l.addAll(index + offset, c);
+		modCount = l.modCount;
+		size += i;
+		return true;
+	}
 
-		@Override
-		public Iterator<E> iterator() {
-			return listIterator();
-		}
+	@Override
+	public Iterator<E> iterator() {
+		return listIterator();
+	}
 
-		@Override
-		public ListIteratorMe<E> listIterator(final int index) { // final?
-			checkForComodification();
-			rangeCheckForAdd(index); // ?
-			return new ListIteratorMe<E>() {
-				private final ListIteratorMe<E> i = l.listIterator(index + offset);
+	@Override
+	public ListIteratorMe<E> listIterator(final int index) { // final?
+		checkForComodification();
+		rangeCheckForAdd(index); // ?
+		return new ListIteratorMe<E>() {
+			private final ListIteratorMe<E> i = l.listIterator(index + offset);
 
-				@Override
-				public boolean hasNext() {
-					return nextIndex() < size;
-				}
-
-				@Override
-				public E next() {
-					if (hasNext()) {
-						return (E) i.next();
-					}
-					throw new NoSuchElementException();
-				}
-
-				@Override
-				public boolean hasPrevious() {
-					return previousIndex() >= 0;
-				}
-
-				@Override
-				public E previous() {
-					if (hasPrevious())
-						return i.previous();
-					throw new NoSuchElementException();
-				}
-
-				@Override
-				public int nextIndex() {
-					return i.nextIndex() - offset;
-				}
-
-				@Override
-				public int previousIndex() {
-					return i.previousIndex() - offset;
-				}
-
-				@Override
-				public void remove() {
-					i.remove();
-					SubList.this.modCount = l.modCount;
-					size--;
-				}
-
-				@Override
-				public void set(E e) {
-					i.set(e);
-				}
-
-				@Override
-				public void add(E e) {
-					i.add(e);
-					SubList.this.modCount = l.modCount;
-					size++;
-				}
-			};
-		}
-
-		public ListMe<E> subList(int fromIndex, int toIndex) {
-			return new SubList<>(this, fromIndex, toIndex);
-		}
-
-		private void checkForComodification() {
-			if (modCount != l.modCount)
-				throw new ConcurrentModificationException();
-		}
-
-		private void rangeCheck(int index) {
-			if ((index < 0) || (index >= size)) {
-				throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+			@Override
+			public boolean hasNext() {
+				return nextIndex() < size;
 			}
-		}
 
-		private void rangeCheckForAdd(int index) {
-			if ((index < 0) || (index > size)) { // 可等于
-				throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+			@Override
+			public E next() {
+				if (hasNext()) {
+					return (E) i.next();
+				}
+				throw new NoSuchElementException();
 			}
-		}
 
-		private String outOfBoundsMsg(int index) {
-			return "Index:" + index + ", Size:" + size();
+			@Override
+			public boolean hasPrevious() {
+				return previousIndex() >= 0;
+			}
+
+			@Override
+			public E previous() {
+				if (hasPrevious())
+					return i.previous();
+				throw new NoSuchElementException();
+			}
+
+			@Override
+			public int nextIndex() {
+				return i.nextIndex() - offset;
+			}
+
+			@Override
+			public int previousIndex() {
+				return i.previousIndex() - offset;
+			}
+
+			@Override
+			public void remove() {
+				i.remove();
+				SubListMe.this.modCount = l.modCount;
+				size--;
+			}
+
+			@Override
+			public void set(E e) {
+				i.set(e);
+			}
+
+			@Override
+			public void add(E e) {
+				i.add(e);
+				SubListMe.this.modCount = l.modCount;
+				size++;
+			}
+		};
+	}
+
+	public ListMe<E> subList(int fromIndex, int toIndex) {
+		return new SubListMe<>(this, fromIndex, toIndex);
+	}
+
+	private void checkForComodification() {
+		if (modCount != l.modCount)
+			throw new ConcurrentModificationException();
+	}
+
+	private void rangeCheck(int index) {
+		if ((index < 0) || (index >= size)) {
+			throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
 		}
+	}
+
+	private void rangeCheckForAdd(int index) {
+		if ((index < 0) || (index > size)) { // 可等于
+			throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
+		}
+	}
+
+	private String outOfBoundsMsg(int index) {
+		return "Index:" + index + ", Size:" + size();
 	}
 }
 
-/*class RandomAccessSubList<E> extends SubList<E> implements RandomAccess {
-	RandomAccessSubList(AbstractListMe<E> list, int fromIndex, int toIndex) {
+class RandomAccessSubListMe<E> extends SubListMe<E> implements RandomAccess {
+	RandomAccessSubListMe(AbstractListMe<E> list, int fromIndex, int toIndex) {
 		super(list, fromIndex, toIndex);
 	}
 
 	public ListMe<E> subList(int fromIndex, int toIndex) {
-		return new RandomAccessSubList<>(this, fromIndex, toIndex);
+		return new RandomAccessSubListMe<>(this, fromIndex, toIndex);
 	}
-}*/
+}
 
 //未覆写的
 /*@Override
