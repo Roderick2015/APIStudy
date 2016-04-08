@@ -113,7 +113,7 @@ public abstract class AbstractCollectionMe<T> implements CollectionMe<T> {
 
 	@Override
 	public boolean add(T e) {
-		throw new UnsupportedOperationException(); //?
+		throw new UnsupportedOperationException(); //子类可以不覆写该方法，但是使用它的话，必须自己实现，否则抛出异常
 	}
 
 	@Override
