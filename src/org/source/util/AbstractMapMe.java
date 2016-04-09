@@ -1,5 +1,6 @@
 package org.source.util;
 
+import java.io.Serializable;
 import java.util.Iterator;
 
 public abstract class AbstractMapMe<K, V> implements MapMe<K, V> {
@@ -256,6 +257,7 @@ public abstract class AbstractMapMe<K, V> implements MapMe<K, V> {
 		return true;
 	}
 	
+	@Override
 	public int hashCode() {
 		int h = 0;
 		Iterator<EntryMe<K, V>> i = entrySet().iterator();
@@ -264,5 +266,67 @@ public abstract class AbstractMapMe<K, V> implements MapMe<K, V> {
 		return h;
 	}
 	
+	@Override
+	public String toString() {
+		Iterator<EntryMe<K, V>> i = entrySet().iterator();
+		if (!i.hasNext())
+			return "{}";
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append('{');
+		for (;;) {
+			EntryMe<K, V> e = i.next();
+			K key = e.getKey();
+			V value = e.getValue();
+			sb.append(key == this ? "(this Map)" : key);
+			sb.append('=');
+			sb.append(value == this ? "(this Map)" : value); //什么情况下会等于this?
+			if (!i.hasNext())
+				return sb.append('}').toString();
+			sb.append(',').append(' ');
+		}
+	}
+	
+	/**
+	 * keys 和 values不会被克隆？
+	 */
+	protected Object clone() throws CloneNotSupportedException {
+		AbstractMapMe<?, ?> result = (AbstractMapMe<?, ?>) super.clone();
+		result.keySet = null;
+		result.values = null;
+		return result;
+	}
+	
+	private static boolean eq(Object o1, Object o2) {
+		return o1 == null ? o2 == null : o1.equals(o2);
+	}
+	
+	public static class SimpleEntryMe<K, V>
+		implements EntryMe<K, V>, Serializable {
+		private static final long serialVersionUID = -4517525601307819457L;
+		
+		private final K key;
+		private V value;
+		
+		public SimpleEntryMe() {
+			
+		}
+
+		@Override
+		public K getKey() {
+			return null;
+		}
+
+		@Override
+		public V getValue() {
+			return null;
+		}
+
+		@Override
+		public V setValue(V value) {
+			return null;
+		}
+		
+	}
 	
 }
