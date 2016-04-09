@@ -297,10 +297,16 @@ public abstract class AbstractMapMe<K, V> implements MapMe<K, V> {
 		return result;
 	}
 	
+	/**
+	 * 单个的key或value比对
+	 */
 	private static boolean eq(Object o1, Object o2) {
 		return o1 == null ? o2 == null : o1.equals(o2);
 	}
 	
+	/**
+	 * 存储单条key和value
+	 */
 	public static class SimpleEntryMe<K, V>
 		implements EntryMe<K, V>, Serializable {
 		private static final long serialVersionUID = -4517525601307819457L;
@@ -308,25 +314,104 @@ public abstract class AbstractMapMe<K, V> implements MapMe<K, V> {
 		private final K key;
 		private V value;
 		
-		public SimpleEntryMe() {
-			
+		public SimpleEntryMe(K key, V value) {
+			this.key = key;
+			this.value = value;
 		}
 
+		public SimpleEntryMe(EntryMe<? extends K, ? extends V> entry) {
+			this.key = entry.getKey();
+			this.value = entry.getValue();
+		}
+		
 		@Override
 		public K getKey() {
-			return null;
+			return key;
 		}
 
 		@Override
 		public V getValue() {
-			return null;
+			return value;
 		}
 
 		@Override
 		public V setValue(V value) {
-			return null;
+			V oldValue = this.value;
+			this.value = value;
+			return oldValue;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof MapMe.EntryMe)) //先判断类型一致
+				return false;
+			MapMe.EntryMe<?, ?> e = (MapMe.EntryMe<?, ?>) o; 
+			return eq(key, e.getKey()) && eq(value, e.getValue());
 		}
 		
+		@Override
+		public int hashCode() {
+			return (key == null ? 0 : key.hashCode()) ^
+				   (value == null ? 0 : value.hashCode()); //异或运算符，二进制运算
+		}
+
+		@Override
+		public String toString() {
+			return key + "=" + value;
+		}
 	}
 	
+	public static class SimpleImmutableEntryMe<K, V>
+		implements EntryMe<K, V>, Serializable {
+		private static final long serialVersionUID = 142620153596564863L;
+
+		 private final K key;
+	        private final V value;
+		public SimpleImmutableEntryMe(K key, V value) {
+            this.key   = key;
+            this.value = value;
+        }
+		
+		public SimpleImmutableEntryMe(EntryMe<? extends K, ? extends V> entry) {
+            this.key   = entry.getKey();
+            this.value = entry.getValue();
+        }
+		
+		@Override
+		public K getKey() {
+			return key;
+		}
+
+		@Override
+		public V getValue() {
+			return value;
+		}
+
+		/**
+		 * 不可变的实现，所以不能替换值，线程安全
+		 */
+		@Override
+		public V setValue(V value) {
+			 throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (!(o instanceof MapMe.EntryMe)) //先判断类型一致
+				return false;
+			MapMe.EntryMe<?, ?> e = (MapMe.EntryMe<?, ?>) o; 
+			return eq(key, e.getKey()) && eq(value, e.getValue());
+		}
+		
+		@Override
+		public int hashCode() {
+			return (key == null ? 0 : key.hashCode()) ^
+				   (value == null ? 0 : value.hashCode()); //异或运算符，二进制运算
+		}
+
+		@Override
+		public String toString() {
+			return key + "=" + value;
+		}
+	}
 }
