@@ -10,10 +10,10 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 	
 	private static final long serialVersionUID = -6449487488242541901L;
 
-	//初始容量，必须是2的幂，为什么要位运算不直接赋值
+	//初始容量，必须是2的幂，为什么要位运算不直接赋值，2的幂都是为了减少key之间的碰撞
 	static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
 	
-	//最大容量，必须是2的幂
+	//最大容量，必须是2的幂，容量是bucket的数量
 	static final int MAXIMUM_CAPACITY = 1 << 30;
 	
 	//填充因子，影响哈希表自动扩容的大小
@@ -32,7 +32,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 		final int hash; //final变量，存入常量池
 		final K key;
 		V value;
-		Node<K, V> next;
+		Node<K, V> next; //单项链表？
 		
 		Node(int hash, K key, V value, Node<K, V> next) {
 			this.hash = hash;
@@ -90,7 +90,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 	 * 存放具体元素的集合
 	 */
 	transient SetMe<MapMe.EntryMe<K, V>> entrySet;
-	transient int size;
+	transient int size; //添加的元素个数
 	transient int modCount;
 	/**
 	 * 当map的size(容量*填充因子)大于该值时，需使用resize方法扩容
@@ -171,6 +171,51 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
         return (e = getNode(hash(key), key)) == null ? null : e.value;
     }
 	
+	public V remove(Object key) {
+        Node<K,V> e;
+        return (e = removeNode(hash(key), key, null, false, true)) == null ?
+            null : e.value;
+    }
+	
+	final Node<K, V> removeNode(int hash, Object key, Object value, boolean matchValue, boolean movable) {
+		Node<K, V>[] tab;
+		Node<K, V> p;
+		int n, index;
+		if ((tab = table) != null && (n = tab.length) > 0 && (p = tab[index = (n - 1) & hash]) != null) {
+			Node<K, V> node = null, e;
+			K k;
+			V v;
+			if (p.hash == hash && ((k = p.key) == key || (key != null && key.equals(k))))
+				node = p;
+			else if ((e = p.next) != null) {
+				if (p instanceof TreeNode)
+					node = ((TreeNode<K, V>) p).getTreeNode(hash, key);
+				else {
+					do {
+						if (e.hash == hash && ((k = e.key) == key || (key != null && key.equals(k)))) {
+							node = e;
+							break;
+						}
+						p = e;
+					} while ((e = e.next) != null);
+				}
+			}
+			if (node != null && (!matchValue || (v = node.value) == value || (value != null && value.equals(v)))) {
+				if (node instanceof TreeNode)
+					((TreeNode<K, V>) node).removeTreeNode(this, tab, movable);
+				else if (node == p)
+					tab[index] = node.next;
+				else
+					p.next = node.next;
+				++modCount;
+				--size;
+				afterNodeRemoval(node);
+				return node;
+			}
+		}
+		return null;
+	}
+	
 	final Node<K,V> getNode(int hash, Object key) {
         Node<K,V>[] tab; Node<K,V> first, e; int n; K k;
         if ((tab = table) != null && (n = tab.length) > 0 &&
@@ -197,7 +242,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 
 	static final int hash(Object key) {
 		int h;
-		return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+		return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16); //散列方式与1.7不一样？如何减少了key之间的碰撞
 	}
 	
 	static Class<?> comparableClassFor(Object x) {
@@ -244,6 +289,9 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
         }
     }
 
+	/**
+	 * 哪里做了rehash?
+	 */
 	final Node<K, V>[] resize() {
 		Node<K, V>[] oldTab = table;
 		int oldCap = (oldTab == null) ? 0 : oldTab.length;
@@ -326,14 +374,18 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 	
 	final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
              boolean evict) {
+		/*if (hash == 50)
+		System.out.println("key:" + key + " hash:" + key.hashCode() + " size:" + size);*/
 		Node<K, V>[] tab;
 		Node<K, V> p;
 		int n;
 		int i;
 		
-		if ((tab = table) == null || (n = tab.length) == 0)
+		if ((tab = table) == null || (n = tab.length) == 0) //n赋值为当前数组的长度
             n = (tab = resize()).length;
-        if ((p = tab[i = (n - 1) & hash]) == null)
+        if ((p = tab[i = 10]) == null) //i = (n - 1) & hash
+        	//(n - 1) & hash 哈希值和(数组长度-1)做与运算，此处有玄机，可降低hash碰撞率以更加均匀的分布在bucket中
+        	//还有一个作用是不越界，得到的值不会比n-1大
             tab[i] = newNode(hash, key, value, null);
         else {
             Node<K,V> e; K k;
@@ -492,6 +544,98 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
             }
 		}
 		
+		final void removeTreeNode(HashMapMe<K, V> map, Node<K, V>[] tab, boolean movable) {
+			int n;
+			if (tab == null || (n = tab.length) == 0)
+				return;
+			int index = (n - 1) & hash;
+			TreeNode<K, V> first = (TreeNode<K, V>) tab[index], root = first, rl;
+			TreeNode<K, V> succ = (TreeNode<K, V>) next, pred = prev;
+			if (pred == null)
+				tab[index] = first = succ;
+			else
+				pred.next = succ;
+			if (succ != null)
+				succ.prev = pred;
+			if (first == null)
+				return;
+			if (root.parent != null)
+				root = root.root();
+			if (root == null || root.right == null || (rl = root.left) == null || rl.left == null) {
+				tab[index] = first.untreeify(map); // too small
+				return;
+			}
+			TreeNode<K, V> p = this, pl = left, pr = right, replacement;
+			if (pl != null && pr != null) {
+				TreeNode<K, V> s = pr, sl;
+				while ((sl = s.left) != null) // find successor
+					s = sl;
+				boolean c = s.red;
+				s.red = p.red;
+				p.red = c; // swap colors
+				TreeNode<K, V> sr = s.right;
+				TreeNode<K, V> pp = p.parent;
+				if (s == pr) { // p was s's direct parent
+					p.parent = s;
+					s.right = p;
+				} else {
+					TreeNode<K, V> sp = s.parent;
+					if ((p.parent = sp) != null) {
+						if (s == sp.left)
+							sp.left = p;
+						else
+							sp.right = p;
+					}
+					if ((s.right = pr) != null)
+						pr.parent = s;
+				}
+				p.left = null;
+				if ((p.right = sr) != null)
+					sr.parent = p;
+				if ((s.left = pl) != null)
+					pl.parent = s;
+				if ((s.parent = pp) == null)
+					root = s;
+				else if (p == pp.left)
+					pp.left = s;
+				else
+					pp.right = s;
+				if (sr != null)
+					replacement = sr;
+				else
+					replacement = p;
+			} else if (pl != null)
+				replacement = pl;
+			else if (pr != null)
+				replacement = pr;
+			else
+				replacement = p;
+			if (replacement != p) {
+				TreeNode<K, V> pp = replacement.parent = p.parent;
+				if (pp == null)
+					root = replacement;
+				else if (p == pp.left)
+					pp.left = replacement;
+				else
+					pp.right = replacement;
+				p.left = p.right = p.parent = null;
+			}
+
+			TreeNode<K, V> r = p.red ? root : balanceDeletion(root, replacement);
+
+			if (replacement == p) { // detach
+				TreeNode<K, V> pp = p.parent;
+				p.parent = null;
+				if (pp != null) {
+					if (p == pp.left)
+						pp.left = null;
+					else if (p == pp.right)
+						pp.right = null;
+				}
+			}
+			if (movable)
+				moveRootToFront(tab, r);
+		}
 		static int tieBreakOrder(Object a, Object b) {
             int d;
             if (a == null || b == null ||
@@ -710,6 +854,88 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 								xpp.red = true;
 								root = rotateLeft(root, xpp);
 							}
+						}
+					}
+				}
+			}
+		}
+
+		static <K, V> TreeNode<K, V> balanceDeletion(TreeNode<K, V> root, TreeNode<K, V> x) {
+			for (TreeNode<K, V> xp, xpl, xpr;;) {
+				if (x == null || x == root)
+					return root;
+				else if ((xp = x.parent) == null) {
+					x.red = false;
+					return x;
+				} else if (x.red) {
+					x.red = false;
+					return root;
+				} else if ((xpl = xp.left) == x) {
+					if ((xpr = xp.right) != null && xpr.red) {
+						xpr.red = false;
+						xp.red = true;
+						root = rotateLeft(root, xp);
+						xpr = (xp = x.parent) == null ? null : xp.right;
+					}
+					if (xpr == null)
+						x = xp;
+					else {
+						TreeNode<K, V> sl = xpr.left, sr = xpr.right;
+						if ((sr == null || !sr.red) && (sl == null || !sl.red)) {
+							xpr.red = true;
+							x = xp;
+						} else {
+							if (sr == null || !sr.red) {
+								if (sl != null)
+									sl.red = false;
+								xpr.red = true;
+								root = rotateRight(root, xpr);
+								xpr = (xp = x.parent) == null ? null : xp.right;
+							}
+							if (xpr != null) {
+								xpr.red = (xp == null) ? false : xp.red;
+								if ((sr = xpr.right) != null)
+									sr.red = false;
+							}
+							if (xp != null) {
+								xp.red = false;
+								root = rotateLeft(root, xp);
+							}
+							x = root;
+						}
+					}
+				} else { // symmetric
+					if (xpl != null && xpl.red) {
+						xpl.red = false;
+						xp.red = true;
+						root = rotateRight(root, xp);
+						xpl = (xp = x.parent) == null ? null : xp.left;
+					}
+					if (xpl == null)
+						x = xp;
+					else {
+						TreeNode<K, V> sl = xpl.left, sr = xpl.right;
+						if ((sl == null || !sl.red) && (sr == null || !sr.red)) {
+							xpl.red = true;
+							x = xp;
+						} else {
+							if (sl == null || !sl.red) {
+								if (sr != null)
+									sr.red = false;
+								xpl.red = true;
+								root = rotateLeft(root, xpl);
+								xpl = (xp = x.parent) == null ? null : xp.left;
+							}
+							if (xpl != null) {
+								xpl.red = (xp == null) ? false : xp.red;
+								if ((sl = xpl.left) != null)
+									sl.red = false;
+							}
+							if (xp != null) {
+								xp.red = false;
+								root = rotateRight(root, xp);
+							}
+							x = root;
 						}
 					}
 				}

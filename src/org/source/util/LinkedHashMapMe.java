@@ -12,4 +12,12 @@ public class LinkedHashMapMe<K, V> extends HashMapMe<K, V> implements MapMe<K, V
 		}
 	}
 
+	void afterNodeInsertion(boolean evict) { // possibly remove eldest
+        System.out.print("LinkedHashMapMe.afterNodeInsertion......");
+       /* if (evict && (first = head) != null && removeEldestEntry(first)) {
+            K key = first.key;
+            removeNode(hash(key), key, null, false, true);
+        }*/
+    }
+	
 }
