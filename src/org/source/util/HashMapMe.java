@@ -83,7 +83,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 	}
 	
 	/**
-	 * 存储元素的数组，2的幂次倍
+	 * 存储元素的数组，2的幂次倍，bucket数组
 	 */
 	transient Node<K, V>[] table;
 	/**
@@ -289,9 +289,6 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
         }
     }
 
-	/**
-	 * 哪里做了rehash?
-	 */
 	final Node<K, V>[] resize() {
 		Node<K, V>[] oldTab = table;
 		int oldCap = (oldTab == null) ? 0 : oldTab.length;
@@ -321,12 +318,12 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 		Node<K, V>[] newTab = (Node<K, V>[]) new Node[newCap];
 		table = newTab;
 		if (oldTab != null) {
-			for (int j = 0; j < oldCap; ++j) {
+			for (int j = 0; j < oldCap; ++j) { //扩容后，对旧table中的元素重新hash分配，逐个放入新table中
 				Node<K, V> e;
 				if ((e = oldTab[j]) != null) {
 					oldTab[j] = null;
 					if (e.next == null)
-						newTab[e.hash & (newCap - 1)] = e;
+						newTab[e.hash & (newCap - 1)] = e; //只有一个元素，无链表，直接根据新table的长度再次hash放入
 					else if (e instanceof TreeNode)
 						((TreeNode<K, V>) e).split(this, newTab, j, oldCap);
 					else {
@@ -337,7 +334,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 						Node<K,V> next;
 						do {
 							next = e.next;
-							if ((e.hash & oldCap) == 0) {
+							if ((e.hash & oldCap) == 0) { //对于链表，使用该条件进行区分，分成两条链，
                                 if (loTail == null)
                                     loHead = e;
                                 else
@@ -354,11 +351,11 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
                         } while ((e = next) != null);
                         if (loTail != null) {
                             loTail.next = null;
-                            newTab[j] = loHead;
+                            newTab[j] = loHead; //该链仍留在原位置
                         }
                         if (hiTail != null) {
                             hiTail.next = null;
-                            newTab[j + oldCap] = hiHead;
+                            newTab[j + oldCap] = hiHead; //拆分出的新链位置=旧位置+旧表长度
 						}
 					}
 				}
