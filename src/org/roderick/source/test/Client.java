@@ -1,7 +1,7 @@
-package org.source.test;
+package org.roderick.source.test;
 
-import org.source.util.HashMapMe;
-import org.source.util.MapMe;
+import org.roderick.source.util.HashMapMe;
+import org.roderick.source.util.MapMe;
 
 public class Client {
 

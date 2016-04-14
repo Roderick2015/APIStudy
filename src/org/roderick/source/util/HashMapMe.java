@@ -1,4 +1,4 @@
-package org.source.util;
+package org.roderick.source.util;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -158,7 +158,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 					threshold = tableSizeFor(t);
 			} else if (s > threshold) //?
 				resize();
-			for (org.source.util.MapMe.EntryMe<? extends K, ? extends V> e : m.entrySet()) {
+			for (org.roderick.source.util.MapMe.EntryMe<? extends K, ? extends V> e : m.entrySet()) {
 				K key = e.getKey();
 				V value = e.getValue();
 				putVal(hash(key), key, value, false, evict);
