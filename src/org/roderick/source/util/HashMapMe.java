@@ -32,7 +32,7 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 		final int hash; //final变量，存入常量池
 		final K key;
 		V value;
-		Node<K, V> next; //单项链表？
+		Node<K, V> next; //下个元素，单项链表
 		
 		Node(int hash, K key, V value, Node<K, V> next) {
 			this.hash = hash;
@@ -148,6 +148,9 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 		return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
 	}
 	
+	/**
+	 * @param evict 干啥用？
+	 */
 	final void putMapEntries(MapMe<? extends K, ? extends V> m, boolean evict) {
 		int s = size();
 		if (s > 0) {
@@ -435,7 +438,21 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
 	TreeNode<K, V> replacementTreeNode(Node<K, V> p, Node<K, V> next) {
 		return new TreeNode<>(p.hash, p.key, p.value, next);
 	}
+	
+	/**
+	 * 重新初始化
+	 */
+	void reinitialize() {
+        table = null;
+        entrySet = null;
+        keySet = null;
+        values = null;
+        modCount = 0;
+        threshold = 0;
+        size = 0;
+    }
 
+	//callback?
 	void afterNodeAccess(Node<K, V> p) {
 	}
 
