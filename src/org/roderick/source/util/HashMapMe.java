@@ -180,6 +180,11 @@ public class HashMapMe<K, V> extends AbstractMapMe<K, V>
             null : e.value;
     }
 	
+	/**
+	 * @param matchValue ?
+	 * @param movable ?
+	 * @return
+	 */
 	final Node<K, V> removeNode(int hash, Object key, Object value, boolean matchValue, boolean movable) {
 		Node<K, V>[] tab;
 		Node<K, V> p;

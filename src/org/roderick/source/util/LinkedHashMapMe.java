@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 
 public class LinkedHashMapMe<K, V> extends HashMapMe<K, V> implements MapMe<K, V> {
 
@@ -267,11 +268,28 @@ public class LinkedHashMapMe<K, V> extends HashMapMe<K, V> implements MapMe<K, V
 		}
 		
 		@Override
-		public Iterator<K> iterator() {
-			// TODO Auto-generated method stub
-			return null;
+		public final Iterator<K> iterator() {
+			return new LinkedKeyIterator();
 		}
-
+		
+		public final boolean remove(Object key) {
+            return removeNode(hash(key), key, null, false, true) != null;
+        }
+		
+		/*public final Spliterator<K> spliterator()  {
+            return Spliterators.spliterator(this, Spliterator.SIZED |
+                                            Spliterator.ORDERED |
+                                            Spliterator.DISTINCT);
+        }*/
+		public final void forEach(Consumer<? super K> action) {
+            if (action == null)
+                throw new NullPointerException();
+            int mc = modCount;
+            for (LinkedHashMapMe.Entry<K,V> e = head; e != null; e = e.after)
+                action.accept(e.key);
+            if (modCount != mc)
+                throw new ConcurrentModificationException();
+        }
 	}
 	
 	abstract class LinkedHashIterator {
@@ -293,11 +311,48 @@ public class LinkedHashMapMe<K, V> extends HashMapMe<K, V> implements MapMe<K, V
 			LinkedHashMapMe.Entry<K, V> e = next;
 			if (modCount != expectedModCount)
 				throw new ConcurrentModificationException();
-			
+			if (e == null)
+				throw new NoSuchElementException();
+			current = e;
+			next = e.after;
+			return e;
 		}
 		
+		public final void remove() {
+			Node<K, V> p = current;
+			if (p == null)
+				throw new IllegalStateException();
+			if (modCount != expectedModCount)
+				throw new ConcurrentModificationException();
+			current = null;
+			K key = p.key;
+			removeNode(hash(key), key, null, false, false);
+			expectedModCount = modCount;
+		}
 	}
 	
-	final class LinkedKeyIterator extends 
+	final class LinkedKeyIterator extends LinkedHashIterator
+		implements Iterator<K> {
+		@Override
+		public final K next() {
+			return nextNode().getKey();
+		}
+	}
+	
+	final class LinkedValueIterator extends LinkedHashIterator
+		implements Iterator<V> {
+		@Override
+		public final V next() {
+			return nextNode().value;
+		}
+	}
+	
+	final class LinkedEntryIterator extends LinkedHashIterator
+		implements Iterator<MapMe.EntryMe<K, V>> {
+		@Override
+		public final MapMe.EntryMe<K, V> next() {
+			return nextNode();
+		}
+	}
 	
 }
