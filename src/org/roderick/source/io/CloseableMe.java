@@ -2,9 +2,9 @@ package org.roderick.source.io;
 
 import java.io.IOException;
 
-import org.roderick.source.lang.AutoCloseable;
+import org.roderick.source.lang.AutoCloseableMe;
 
-public interface Closeable extends AutoCloseable {
+public interface CloseableMe extends AutoCloseableMe {
 
 	@Override
 	public void close() throws IOException;

@@ -14,6 +14,6 @@ package org.roderick.source.lang;
  * }
  * 特别是在close出现异常时，会进行处理
  */
-public interface AutoCloseable {
+public interface AutoCloseableMe {
 	void close() throws Exception;
 }
