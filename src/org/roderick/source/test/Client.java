@@ -1,23 +1,39 @@
 package org.roderick.source.test;
 
-import org.roderick.source.util.HashMapMe;
-import org.roderick.source.util.MapMe;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class Client {
 
 	public static void main(String[] args) {
-		MapMe<String, String> map = new HashMapMe<>();
-		for(int i = 0; i < 100; i++) {
-			map.put(i + "李四", "张三" + i);
+		try (
+				FileInputStream ftStream = new FileInputStream("c/a.txt");
+			) 
+		{
+			ftStream.read();
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println(e.toString());
+			StackTraceElement[] a = e.getStackTrace();
+			for (StackTraceElement t : a) {
+				System.out.println(t.toString());
+			}
+			e.printStackTrace();
+			StackTraceElement[] st = new StackTraceElement[1];
+			st[0] = new StackTraceElement("org.class", "myMehtod", null, 33);
+			e.setStackTrace(st);
+			e.initCause(new IOException());
+			System.out.println(e.getCause());
+			e.addSuppressed(new NullPointerException("suppressed ex"));
+			e.addSuppressed(new NullPointerException("other ex"));
+			e.printStackTrace();
+			e.fillInStackTrace();
+			StackTraceElement[] s = e.getStackTrace();
+			for (StackTraceElement t : s) {
+				System.out.println(t.toString());
+			}
+			e.printStackTrace();
 		}
-		/*map.put("1", "张三");
-		map.put("2", "李四");
-		map.put("3", "王五");*/
-		map.put("1002", "看看"); //这个时候的loadfactor是多大？
-		map.put("4", "新增");
-		String a = map.get("4");
-		String b = map.remove("2");
-		map.containsKey("1");
 	}
 	
 }
