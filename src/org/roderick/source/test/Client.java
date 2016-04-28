@@ -13,7 +13,7 @@ public class Client {
 			ftStream.read();
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println(e.toString());
+			System.out.println(e.getMessage());
 			StackTraceElement[] a = e.getStackTrace();
 			for (StackTraceElement t : a) {
 				System.out.println(t.toString());
