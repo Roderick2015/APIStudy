@@ -434,17 +434,19 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 	}
 	
 	/**
-	 * 待修正：
-	 * 覆写了equals方法，特别是在这个类中，必须覆写hashcode方法
-	 * 1.默认的equals和==是等效的，覆写equals后不再等效
-	 * 2.看已看到equals的实现，如果String类不覆写hashcode，那所有字符串都将相等
-	 * 3.自己编写的类在不涉及hash结构时，可以不覆写该方法
-	 * 4.符合java规范约束
+	 * 覆写了equals方法，建议覆写hashcode方法<p>
+	 * 1.==比较的是对象内存地址（包括指向常量池的地址），即两个引用指向的是同一个对象（常量），Obecj的equals方法就是==<p>
+	 * 2.String的equals方法会先比较引用地址，再逐个比较每个字符的值是否相等，因此字符串的内容一致时，equals为true<p>
+	 * 3.Object的hashcode方法返回值是由该对象内存地址转换成整数而来的。
+	 * 因此这时候hashcode的值是由指向的地址决定的，导致equals为true时，两个对象的hashcode不会相等。<p>
+	 * 4.java se规范约定，如果重写equals方法，那也要重写hashCode方法，使equals为真的时，hashCode的值也相同。
+	 * 即重写后，hashcode值由对象内容决定。<p>
+	 * 5.但规范是非强制的，当你不需要hashcode或者不涉及hash结构时（如hashmap等），可以不覆写该方法。
 	 */
 	@Override
 	public int hashCode() {
 		int h = hash;
-		if (h == 0 && value.length > 0) { //首次调用，生成hashcode
+		if (h == 0 && value.length > 0) { //首次调用，生成hashcode，如果是空字符串那也就是默认值了
 			char val[] = value;
 			
 			for (int i = 0; i < value.length; i++) {
@@ -452,8 +454,137 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
             }
 			hash = h;
 		}
-		return h;
+		return hash;
 	}
+	
+	public int indexOf(int ch) {
+		return indexOf(ch, 0);
+	}
+	
+	/**
+	 * 找出该字符在字符串中的位置
+	 * @param ch
+	 * @param fromIndex 偏移量
+	 * @return
+	 */
+	private int indexOf(int ch, int fromIndex) {
+		final int max = value.length;
+		if (fromIndex < 0) { //小于0，置为0
+			fromIndex = 0;
+		} else if (fromIndex >= max) { //大于字符串长度时，返回-1，不会报越界异常
+			return -1;
+		}
+		
+		if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) { //不是增补字符，涉及增补字符集相关知识
+			// handle most cases here (ch is a BMP code point or a
+            // negative value (invalid code point)) 大多出情况都在该方法中处理
+			final char[] value = this.value;
+			for (int i = fromIndex; i < max; i++) {
+				if (value[i] == ch)
+					return i;
+			}
+			return -1;
+		} else {
+			return indexOfSupplementary(ch, fromIndex);
+		}
+	}
+
+	/**
+	 * 处理如utf-16之类的编码
+	 */
+	private int indexOfSupplementary(int ch, int fromIndex) {
+		if (Character.isValidCodePoint(ch)) {
+            final char[] value = this.value;
+            final char hi = Character.highSurrogate(ch);
+            final char lo = Character.lowSurrogate(ch);
+            final int max = value.length - 1;
+            for (int i = fromIndex; i < max; i++) {
+                if (value[i] == hi && value[i + 1] == lo) { //一个人占两个位置？
+                    return i;
+                }
+            }
+        }
+        return -1;
+	}
+	
+	public int lastIndexOf(int ch) {
+        return lastIndexOf(ch, value.length - 1);
+    }
+
+	private int lastIndexOf(int ch, int fromIndex) {
+		if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+			final char[] value = this.value; //都设为final数组，在编译期时，共用一个常量池引用
+			int i = Math.min(fromIndex, value.length - 1); //fromIndex小于0时返回-1，大于value的最大索引值时，以value的最大值匹配
+			for (; i >= 0; i--) {
+				if (value[i] == ch) {
+					return i;
+				}
+			}
+			return -1;
+		} else {
+			return lastIndexOfSupplementary(ch, fromIndex);
+		}
+	}
+
+	private int lastIndexOfSupplementary(int ch, int fromIndex) {
+		if (Character.isValidCodePoint(ch)) {
+			final char[] value = this.value;
+			char hi = Character.highSurrogate(ch);
+			char lo = Character.lowSurrogate(ch);
+			int i = Math.min(fromIndex, value.length - 1);
+			for (; i >= 0; i--) {
+				if (value[i] == hi && value[i + 1] == lo)
+					return i;
+			}
+		}
+		return -1;
+	}
+	
+	public int index(StringMe str) {
+		return indexOf(str, 0);
+	}
+
+	private int indexOf(StringMe str, int fromIndex) {
+		return indexOf(value, 0, value.length, str.value, 0, str.value.length, fromIndex);
+	}
+	
+	static int indexOf(char[] source, int sourceOffset, int sourceCount,
+			StringMe target, int fromIndex) {
+		return indexOf(source, sourceOffset, sourceCount,
+				target.value, 0, target.value.length, fromIndex);
+	}
+	
+	static int indexOf(char[] source, int sourceOffset, int sourceCount,
+			char[] target, int targetOffset, int targetCount, int fromIndex) {
+		if (fromIndex >= sourceCount) //偏移量大于原字符串长度，如果匹配的字符串是空串，则返回原字符串长度值
+			return (targetCount == 0 ? sourceCount : -1);
+		if (fromIndex < 0)
+			fromIndex = 0;
+		if (targetCount == 0) //匹配串是空串则返回偏移量
+			return fromIndex;
+		
+		char first = target[targetOffset];
+		int max = sourceOffset + (sourceCount - targetCount); //匹配串大于源串返-1
+		for (int i = sourceOffset + fromIndex; i <= max; i++) {
+			if (source[i] != first)
+				while (++i <= max && source[i] != first); //先找到第一个匹配的字符
+			
+			if (i <= max) { //找到了第一个，开始匹配第二个
+				int j = i + 1;
+				int end = j + targetCount - 1; //匹配的最大长度
+				for (int k = targetOffset + 1; j < end && source[j]
+						== target[k]; j++, k++);
+				
+				if (j == end)
+					return i - sourceOffset;
+			}
+		}
+		return -1;
+	}
+	
+	
+
+	
 	
 	@Override
 	public CharSequence subSequence(int start, int end) {

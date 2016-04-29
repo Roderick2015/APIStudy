@@ -1,39 +1,31 @@
 package org.roderick.source.test;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import org.roderick.source.lang.StringMe;
 
 public class Client {
 
 	public static void main(String[] args) {
-		try (
-				FileInputStream ftStream = new FileInputStream("c/a.txt");
-			) 
-		{
-			ftStream.read();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(e.getMessage());
-			StackTraceElement[] a = e.getStackTrace();
-			for (StackTraceElement t : a) {
-				System.out.println(t.toString());
-			}
-			e.printStackTrace();
-			StackTraceElement[] st = new StackTraceElement[1];
-			st[0] = new StackTraceElement("org.class", "myMehtod", null, 33);
-			e.setStackTrace(st);
-			e.initCause(new IOException());
-			System.out.println(e.getCause());
-			e.addSuppressed(new NullPointerException("suppressed ex"));
-			e.addSuppressed(new NullPointerException("other ex"));
-			e.printStackTrace();
-			e.fillInStackTrace();
-			StackTraceElement[] s = e.getStackTrace();
-			for (StackTraceElement t : s) {
-				System.out.println(t.toString());
-			}
-			e.printStackTrace();
-		}
+	//	byte b[] = {1,0,1,1,0};
+		char ch[] = {65,78,36};
+		char ch2[] = {'a','b','c'};
+		StringMe aStr = new StringMe(ch);
+		System.out.println(aStr.hashCode());
+		StringMe bStr = new StringMe(ch);
+		aStr.equals(bStr);
+		System.out.println(bStr.hashCode());
+		StringMe cStr = new StringMe(ch2);
+		System.out.println(aStr==bStr);
+		
+		String bc = "123";
+		String ad = "123";
+		String dd = ad;
+		char ch3[] = {'1','2','3'};
+		String cc = new String(ch3);
+		String ee = new String(ch);
+		System.out.println(cc.hashCode());
+		System.out.println(bc.hashCode());
+		System.out.println(ad.hashCode());
+		System.out.println(bc==dd);
 	}
 	
 }
