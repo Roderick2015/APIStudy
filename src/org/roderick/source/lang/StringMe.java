@@ -84,7 +84,7 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 			int c = codePoints[i];
 			if (Character.isBmpCodePoint(c))
 				v[j] = (char) c;
-			/*else //这个方法是protected权限，我无法访问到，因此注释
+			/*else //这个方法是protected权限，我无法访问到，而且是final类无法继承，因此注释
 				Character.toSurrogates(c, v, j++);*/
 		}
 
@@ -107,7 +107,7 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 		if (charsetName == null)
 			throw new NullPointerException("charsetName");
 		checkBounds(bytes, offset, length);
-		//StringCoding类，非java.lang包不可见
+		//StringCoding是protected类，非java.lang包不可见
 		//this.value = StringCoding.decode(charsetName, bytes, offset, length);
 		this.value = new char[0];
 	}
@@ -209,6 +209,14 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 		System.arraycopy(value, 0, dst, dstBegin, value.length);
 	}
 	
+	/**
+	 * 将字符串中的字符复制到指定的char数组中，注意此处复制的字符个数是srcEnd - srcBegin，
+	 * 如传入1,3相当于取字符串[1,3)位置的字符
+	 * @param srcBegin 源字符串起始位置
+	 * @param srcEnd 源字符串结束位置
+	 * @param dst 目标char数组
+	 * @param dstBegin 目标char数组起始位置，从该索引位置开始替换
+	 */
 	public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
         if (srcBegin < 0) {
             throw new StringIndexOutOfBoundsException(srcBegin);
@@ -238,6 +246,11 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
         return StringCoding.encode(value, 0, value.length);
     }*/
 	
+	/**
+	 * 1.比较是否指向相同的对象，也是Object默认的equals比较方式<br>
+	 * 2.判断是否为当前类的实例对象<br>
+	 * 3.比较长度和每个元素是否相等<br>
+	 */
 	@Override
 	public boolean equals(Object anObject) {
 		if (this == anObject) {
@@ -252,7 +265,7 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 				char v2[] = anotherString.value;
 				int i = 0;
 				while (n-- != 0) {
-					if (v1[i] != v2[i]) //可以直接用n，从后面比起
+					if (v1[i] != v2[i])
 						return false;
 					i++;
 				}
@@ -434,13 +447,13 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 	}
 	
 	/**
-	 * 覆写了equals方法，建议覆写hashcode方法<p>
-	 * 1.==比较的是对象内存地址（包括指向常量池的地址），即两个引用指向的是同一个对象（常量），Obecj的equals方法就是==<p>
-	 * 2.String的equals方法会先比较引用地址，再逐个比较每个字符的值是否相等，因此字符串的内容一致时，equals为true<p>
+	 * 覆写了equals方法，建议覆写hashcode方法<br>
+	 * 1.==比较的是对象内存地址（包括指向常量池的地址），即两个引用指向的是同一个对象（常量），Obecj的equals方法就是==<br>
+	 * 2.String的equals方法会先比较引用地址，再逐个比较每个字符的值是否相等，因此字符串的内容一致时，equals为true<br>
 	 * 3.Object的hashcode方法返回值是由该对象内存地址转换成整数而来的。
-	 * 因此这时候hashcode的值是由指向的地址决定的，导致equals为true时，两个对象的hashcode不会相等。<p>
+	 * 因此这时候hashcode的值是由指向的地址决定的，导致equals为true时，两个对象的hashcode不会相等。<br>
 	 * 4.java se规范约定，如果重写equals方法，那也要重写hashCode方法，使equals为真的时，hashCode的值也相同。
-	 * 即重写后，hashcode值由对象内容决定。<p>
+	 * 即重写后，hashcode值由对象内容决定。<br>
 	 * 5.但规范是非强制的，当你不需要hashcode或者不涉及hash结构时（如hashmap等），可以不覆写该方法。
 	 */
 	@Override
@@ -540,7 +553,7 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 		return -1;
 	}
 	
-	public int index(StringMe str) {
+	public int indexOf(StringMe str) {
 		return indexOf(str, 0);
 	}
 
@@ -554,6 +567,9 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 				target.value, 0, target.value.length, fromIndex);
 	}
 	
+	/**
+	 * 连续的字符串匹配，匹配失败返回-1
+	 */
 	static int indexOf(char[] source, int sourceOffset, int sourceCount,
 			char[] target, int targetOffset, int targetCount, int fromIndex) {
 		if (fromIndex >= sourceCount) //偏移量大于原字符串长度，如果匹配的字符串是空串，则返回原字符串长度值
@@ -564,16 +580,16 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 			return fromIndex;
 		
 		char first = target[targetOffset];
-		int max = sourceOffset + (sourceCount - targetCount); //匹配串大于源串返-1
+		int max = sourceOffset + (sourceCount - targetCount); //计算循环次数，匹配串大于源串则返-1
 		for (int i = sourceOffset + fromIndex; i <= max; i++) {
 			if (source[i] != first)
 				while (++i <= max && source[i] != first); //先找到第一个匹配的字符
 			
-			if (i <= max) { //找到了第一个，开始匹配第二个
+			if (i <= max) { //找到了第一个，匹配剩余字符
 				int j = i + 1;
 				int end = j + targetCount - 1; //匹配的最大长度
 				for (int k = targetOffset + 1; j < end && source[j]
-						== target[k]; j++, k++);
+						== target[k]; j++, k++); //匹配一个就+1，全部匹配时，j才会等于end
 				
 				if (j == end)
 					return i - sourceOffset;
@@ -582,10 +598,60 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 		return -1;
 	}
 	
+	public int lastIndexOf(StringMe str) {
+		return lastIndexOf(str, value.length);
+	}
 	
+	public int lastIndexOf(StringMe str, int fromIndex) {
+		return lastIndexOf(value, 0, value.length, str.value, 0, str.value.length, fromIndex);
+	}
+	
+	/**
+     * Code shared by String and AbstractStringBuilder to do searches. 
+     */
+	static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
+			StringMe target, int fromIndex) {
+        return lastIndexOf(source, sourceOffset, sourceCount,
+                       target.value, 0, target.value.length,
+                       fromIndex);
+    }
 
-	
-	
+	static int lastIndexOf(char[] source, int sourceOffset, int sourceCount, char[] target, int targetOffset,
+			int targetCount, int fromIndex) {
+		int rightIndex = sourceCount - targetCount;
+		if (fromIndex < 0)
+			return -1;
+		if (fromIndex > rightIndex) // 防止匹配越界
+			fromIndex = rightIndex;
+		if (targetCount == 0) // 空串返回偏移位置
+			return fromIndex;
+
+		int strLastIndex = targetOffset + targetCount - 1;
+		char strLastChar = target[strLastIndex];
+		int min = sourceOffset + targetCount - 1;
+		int i = min + fromIndex;
+
+		startSearchForLastChar: while (true) {
+			while (i >= min && source[i] != strLastChar) {
+				i--;
+			}
+			if (i < min) {
+				return -1;
+			}
+			int j = i - 1;
+			int start = j - (targetCount - 1);
+			int k = strLastIndex - 1;
+
+			while (j > start) {
+				if (source[j--] != target[k--]) {
+					i--;
+					continue startSearchForLastChar;
+				}
+			}
+			return start - sourceOffset + 1;
+		}
+	}
+
 	@Override
 	public CharSequence subSequence(int start, int end) {
 		// TODO Auto-generated method stub
