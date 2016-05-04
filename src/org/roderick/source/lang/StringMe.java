@@ -5,6 +5,8 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * final类，不可继承
@@ -621,15 +623,17 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 		int rightIndex = sourceCount - targetCount;
 		if (fromIndex < 0)
 			return -1;
-		if (fromIndex > rightIndex) // 防止匹配越界
+		// 防止匹配越界，且如果调用的是lastIndexOf(StringMe str)方法，rightIndex一定更小
+		if (fromIndex > rightIndex) 
 			fromIndex = rightIndex;
-		if (targetCount == 0) // 空串返回偏移位置
+		if (targetCount == 0) // 匹配空串返回偏移位置
 			return fromIndex;
 
-		int strLastIndex = targetOffset + targetCount - 1;
-		char strLastChar = target[strLastIndex];
-		int min = sourceOffset + targetCount - 1;
-		int i = min + fromIndex;
+		int strLastIndex = targetOffset + targetCount - 1; //target字符串的最后那个字符的索引位置
+		char strLastChar = target[strLastIndex]; //target字符串的末尾字符
+		//字符串的最小匹配索引位置，如字符串{'1','2','3'}匹配串{'2','3'}，则最小的位置是从'2'开始往前匹，所以min是匹配的左区间
+		int min = sourceOffset + targetCount - 1; 
+		int i = min + fromIndex; //匹配区间[min, i]
 
 		startSearchForLastChar: while (true) {
 			while (i >= min && source[i] != strLastChar) {
@@ -652,12 +656,115 @@ public final class StringMe implements Serializable, Comparable<String>, CharSeq
 		}
 	}
 
+	public StringMe substring(int beginIndex) {
+		if (beginIndex < 0) //人工做安全性检测，优化JIT编译速度
+			throw new StringIndexOutOfBoundsException(beginIndex);
+		
+		int subLen = value.length - beginIndex;
+		if (subLen < 0)
+			throw new StringIndexOutOfBoundsException(subLen);
+		
+		return (beginIndex == 0) ? this : new StringMe(value, beginIndex, subLen);
+	}
+	
+	public StringMe substring(int beginIndex, int endIndex) {
+		if (beginIndex < 0)
+			throw new StringIndexOutOfBoundsException(beginIndex);
+		if (endIndex > value.length)
+			throw new StringIndexOutOfBoundsException(beginIndex);
+		
+		int subLen = endIndex - beginIndex;
+		if (subLen < 0)
+			throw new StringIndexOutOfBoundsException(subLen);
+		
+		return ((beginIndex == 0) && (endIndex == value.length)) ? this
+				: new StringMe(value, beginIndex, subLen);
+	}
+	
 	@Override
 	public CharSequence subSequence(int start, int end) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.substring(start, end);
+	}
+	
+	public StringMe concat(StringMe str) {
+		int otherLen = str.length();
+		if (otherLen == 0)
+			return this;
+		
+		int len = value.length;
+		char buf[] = Arrays.copyOf(value, len + otherLen);
+		str.getChars(buf, len); //把str的内容复制到buf数组中
+		return new StringMe(buf, true); //返回一个新字符串对象，原字符串对象不变，该构造函数外部不可访问
+	}
+	
+	public StringMe replace(char oldChar, char newChar) {
+		if (oldChar != newChar) {
+			int len = value.length;
+			int i = -1;
+			char[] val = value; //一种优化手段
+			
+			while(++i < len) {
+				if (val[i] == oldChar)
+					break;
+			}
+			
+			if (i < len) {
+				char buf[] = new char[len];
+				for (int j = 0; j < i; j++) {
+					buf[j] = val[j];
+				}
+				while (i < len) {
+					char c = val[i];
+					buf[i] = (c == oldChar) ? newChar : c; //如果有多个匹配字符，则全部替换
+					i++;
+				}
+				return new StringMe(buf, true);
+			}
+		}
+		return this;
 	}
 
+	/**
+	 * 正则表达式匹配
+	 */
+	public boolean matches(String regex) {
+		return Pattern.matches(regex, this);
+	}
 	
+	/*public boolean contains(CharSequence s) {
+		return indexOf(s.toString()) > -1;
+	}*/
 	
+	public String replaceFirst(String regex, String replacement) {
+        return Pattern.compile(regex).matcher(this).replaceFirst(replacement);
+    }
+	
+	public String replaceAll(String regex, String replacement) {
+        return Pattern.compile(regex).matcher(this).replaceAll(replacement);
+    }
+	
+	public String replace(CharSequence target, CharSequence replacement) {
+        return Pattern.compile(target.toString(), Pattern.LITERAL).matcher(
+                this).replaceAll(Matcher.quoteReplacement(replacement.toString()));
+    }
+	
+	/**
+	 * 如果为null则返回"null"，否则调用toString方法
+	 */
+	public static String valueOf(Object obj) {
+        return (obj == null) ? "null" : obj.toString();
+    }
+	
+	public static String valueOf(char data[]) {
+        return new String(data);
+    }
+	
+	/**
+	 * 转为串
+	 */
+	public static String valueOf(boolean b) {
+        return b ? "true" : "false";
+    }
+	
+	public native StringMe intern(); //将值缓存到字符串常量池中
 }

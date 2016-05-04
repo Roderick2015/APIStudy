@@ -7,12 +7,14 @@ public class Client {
 	public static void main(String[] args) {
 	//	byte b[] = {1,0,1,1,0};
 		char ch[] = {65,78,36};
-		char ch2[] = {'a','c','d'};
-		char ch3[] = {'B','a','c','d'};
+		char ch2[] = {'c','d'};
+		char ch3[] = {'B','a','c','c'};
 		StringMe aStr = new StringMe(ch);
 		StringMe bStr = new StringMe(ch2);
 		StringMe cStr = new StringMe(ch3);
-		System.out.println(cStr.indexOf(bStr));
+		StringMe aa = cStr.replace('s', '1');
+		aa = new StringMe(ch2);
+		System.out.println(bStr.concat(cStr));
 		String bc = "123";
 		String ad = "123";
 		bc.equals(ad);
