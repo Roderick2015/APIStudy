@@ -13,7 +13,7 @@ public abstract class InputStreamMe implements CloseableMe {
      * has been reached, the value <code>-1</code> is returned. This method
      * blocks until input data is available, the end of the stream is detected,
      * or an exception is thrown.
-     * 返回的是字节值，8个二进制位=1byte，读取的是二进制流。在有数据读入，流末尾，异常前，这个方法会一直阻塞
+     * 返回的是读取的字节值，8个二进制位=1byte，读取的是二进制流。在有数据读入，流末尾，异常前，这个方法会一直阻塞
      *
      * <p> A subclass must provide an implementation of this method.
      *
@@ -30,6 +30,14 @@ public abstract class InputStreamMe implements CloseableMe {
 		return read(b, 0, b.length);
 	}
 	
+	/**
+	 * 把读取的字节值放入b[]数组中
+	 * @param b 放数据的数组
+	 * @param off 偏移量
+	 * @param len 打算读取多少个字节
+	 * @return 实际读取的字节个数，无字节可读或异常，返回-1
+	 * @throws IOException
+	 */
 	public int read(byte b[], int off, int len) throws IOException {
 		if (b == null) {
 			throw new NullPointerException();
